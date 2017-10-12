@@ -11,7 +11,21 @@
 
 #include "helper_functions.h"
 
-struct Particle {
+
+/**
+ * @brief The Particle struct
+ */
+struct Particle
+{
+  Particle();
+
+  void init(int initId, double initX, double initY, double initTheta);
+  void setAssociations(std::vector<int> associations, std::vector<double> senseX, std::vector<double> senseY);
+  std::string getAssociations() const;
+  std::string getSenseX() const;
+  std::string getSenseY() const;
+  friend std::ostream &operator<<(std::ostream &out, const Particle &p);
+  friend bool operator<(const Particle &p1, const Particle &p2);
 
 	int id;
 	double x;
@@ -19,36 +33,27 @@ struct Particle {
 	double theta;
 	double weight;
 	std::vector<int> associations;
-	std::vector<double> sense_x;
-	std::vector<double> sense_y;
+  std::vector<double> senseX;
+  std::vector<double> senseY;
 };
 
 
+/**
+ * @brief The ParticleFilter class
+ */
+class ParticleFilter
+{
+  typedef std::vector<LandmarkObs> TLandmarkObservations;
 
-class ParticleFilter {
-	
-	// Number of particles to draw
-	int num_particles; 
-	
-	
-	
-	// Flag, if filter is initialized
-	bool is_initialized;
-	
-	// Vector of weights of all particles
-	std::vector<double> weights;
-	
 public:
 	
-	// Set of current particles
-	std::vector<Particle> particles;
+  /**
+   * Constructs a new particle filter.
+   * @param num_particles Number of particles
+   */
+  ParticleFilter();
 
-	// Constructor
-	// @param num_particles Number of particles
-	ParticleFilter() : num_particles(0), is_initialized(false) {}
-
-	// Destructor
-	~ParticleFilter() {}
+public:
 
 	/**
 	 * init Initializes particle filter by initializing particles to Gaussian
@@ -59,7 +64,13 @@ public:
 	 * @param std[] Array of dimension 3 [standard deviation of x [m], standard deviation of y [m]
 	 *   standard deviation of yaw [rad]]
 	 */
-	void init(double x, double y, double theta, double std[]);
+  void init(double x, double y, double theta, double stdPos[]);
+
+  /**
+   * @brief getBestParticle
+   * @return Best particle, if existing, null otherwise
+   */
+  const Particle *getBestParticle() const;
 
 	/**
 	 * prediction Predicts the state for the next time step
@@ -70,7 +81,7 @@ public:
 	 * @param velocity Velocity of car from t to t+1 [m/s]
 	 * @param yaw_rate Yaw rate of car from t to t+1 [rad/s]
 	 */
-	void prediction(double delta_t, double std_pos[], double velocity, double yaw_rate);
+  void prediction(double deltaT, double stdPos[], double velocity, double yawRate);
 	
 	/**
 	 * dataAssociation Finds which observations correspond to which landmarks (likely by using
@@ -78,7 +89,7 @@ public:
 	 * @param predicted Vector of predicted landmark observations
 	 * @param observations Vector of landmark observations
 	 */
-	void dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations);
+  void dataAssociation(const TLandmarkObservations &predicted, TLandmarkObservations &observations);
 	
 	/**
 	 * updateWeights Updates the weights for each particle based on the likelihood of the 
@@ -88,8 +99,7 @@ public:
 	 * @param observations Vector of landmark observations
 	 * @param map Map class containing map landmarks
 	 */
-	void updateWeights(double sensor_range, double std_landmark[], const std::vector<LandmarkObs> &observations,
-			const Map &map_landmarks);
+  void updateWeights(double sensor_range, double stdLandmark[], const TLandmarkObservations &observations, const Map &mapLandmarks);
 	
 	/**
 	 * resample Resamples from the updated set of particles to form
@@ -97,22 +107,22 @@ public:
 	 */
 	void resample();
 
-	/*
-	 * Set a particles list of associations, along with the associations calculated world x,y coordinates
-	 * This can be a very useful debugging tool to make sure transformations are correct and assocations correctly connected
-	 */
-	Particle SetAssociations(Particle particle, std::vector<int> associations, std::vector<double> sense_x, std::vector<double> sense_y);
-	
-	std::string getAssociations(Particle best);
-	std::string getSenseX(Particle best);
-	std::string getSenseY(Particle best);
-
 	/**
-	 * initialized Returns whether particle filter is initialized yet or not.
-	 */
-	const bool initialized() const {
-		return is_initialized;
-	}
+   * @return whether particle filter is initialized yet or not.
+   */
+  const bool isInitialized() const;
+
+private:
+  typedef std::vector<Particle> TParticles;
+
+  /** Set of current particles */
+  TParticles mParticles;
+
+  /** Number of particles to draw */
+  int mNumParticles;
+
+  /** Flag, if filter is initialized */
+  bool mIsInitialized;
 };
 
 
